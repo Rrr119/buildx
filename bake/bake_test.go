@@ -3129,3 +3129,61 @@ func stringify[V fmt.Stringer](values []V) []string {
 	sort.Strings(s)
 	return s
 }
+
+func TestReadTargetsSecurityAttestations(t *testing.T) {
+	ctx := context.TODO()
+	fp := File{
+		Name: "docker-bake.hcl",
+		Data: []byte(`
+target "default" {
+  attest = ["type=provenance,mode=min"]
+}
+`),
+	}
+
+	t.Run("fills missing SBOM and keeps user provenance", func(t *testing.T) {
+		t.Parallel()
+		tgts, _, err := ReadTargets(ctx, []File{fp}, []string{"default"}, nil, nil, nil, &EntitlementConf{})
+		require.NoError(t, err)
+
+		att, err := buildflags.SecurityAttestations(tgts["default"].Attest)
+		require.NoError(t, err)
+		m := att.ToMap()
+		require.Len(t, m, 2)
+		require.Equal(t, "type=provenance,mode=min", *m[buildflags.AttestationTypeProvenance])
+		require.Contains(t, *m[buildflags.AttestationTypeSBOM], "generator="+buildflags.DefaultSBOMGenerator)
+	})
+
+	t.Run("override attestations take precedence over preset", func(t *testing.T) {
+		t.Parallel()
+		tgts, _, err := ReadTargets(ctx, []File{fp}, []string{"default"}, []string{
+			"*.attest=type=sbom,generator=custom/sbom:v9",
+		}, nil, nil, &EntitlementConf{})
+		require.NoError(t, err)
+
+		att, err := buildflags.SecurityAttestations(tgts["default"].Attest)
+		require.NoError(t, err)
+		m := att.ToMap()
+		require.Equal(t, "type=sbom,generator=custom/sbom:v9", *m[buildflags.AttestationTypeSBOM])
+		require.Equal(t, "type=provenance,mode=min", *m[buildflags.AttestationTypeProvenance])
+	})
+
+	t.Run("no user attestations gets both SPDX SBOM and in-toto provenance", func(t *testing.T) {
+		t.Parallel()
+		plain := File{
+			Name: "docker-bake.hcl",
+			Data: []byte(`
+target "default" {}
+`),
+		}
+		tgts, _, err := ReadTargets(ctx, []File{plain}, []string{"default"}, nil, nil, nil, &EntitlementConf{})
+		require.NoError(t, err)
+
+		att, err := buildflags.SecurityAttestations(tgts["default"].Attest)
+		require.NoError(t, err)
+		m := att.ToMap()
+		require.Len(t, m, 2)
+		require.Contains(t, *m[buildflags.AttestationTypeSBOM], "type=sbom")
+		require.Equal(t, "type=provenance,mode=max", *m[buildflags.AttestationTypeProvenance])
+	})
+}

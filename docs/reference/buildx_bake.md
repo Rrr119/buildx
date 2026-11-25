@@ -33,6 +33,7 @@ Build from a file
 | [`--pull`](#pull)                   | `bool`        |             | Always attempt to pull all referenced images                                                                          |
 | [`--push`](#push)                   | `bool`        |             | Shorthand for `--set=*.output=type=registry`. Conditional.                                                            |
 | [`--sbom`](#sbom)                   | `string`      |             | Shorthand for `--set=*.attest=type=sbom`                                                                              |
+| [`--sbom-provenance`](#sbom-provenance) | `bool`   |             | Shorthand for `--set=*.attest=type=sbom` with SPDX output and `--set=*.attest=type=provenance,mode=max` attached to every platform image |
 | [`--set`](#set)                     | `stringArray` |             | Override target value (e.g., `targetpattern.key=value`)                                                               |
 | `--var`                             | `stringArray` |             | Set a variable value (e.g., `name=value`)                                                                             |
 
@@ -478,6 +479,13 @@ The `--push` flag follows the same logic as `--load`:
 ### <a name="sbom"></a> Create SBOM attestations (--sbom)
 
 Same as [`build --sbom`](buildx_build.md#sbom).
+
+### <a name="sbom-provenance"></a> Create SPDX SBOM and in-toto provenance attestations (--sbom-provenance)
+
+Same as [`build --sbom-provenance`](buildx_build.md#sbom-provenance). The
+attestations are applied to every target in the Bake definition. Attestations
+defined explicitly in the Bake file or through `--set=*.attest=...` take
+precedence over the preset defaults.
 
 ### <a name="set"></a> Override target configurations from command line (--set)
 

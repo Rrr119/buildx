@@ -46,6 +46,7 @@ Start a build
 | `-q`, `--quiet`                         | `bool`        |           | Suppress the build output and print image ID on success                                                                                          |
 | [`--resource`](#resource)               | `stringArray` |           | Resource limits for build containers (format: `memory=2g`, `cpu-quota=50000`)                                                                    |
 | [`--sbom`](#sbom)                       | `string`      |           | Shorthand for `--attest=type=sbom`                                                                                                               |
+| [`--sbom-provenance`](#sbom-provenance) | `bool`        |           | Shorthand for `--attest=type=sbom` with SPDX output and `--attest=type=provenance,mode=max` attached to every platform image                    |
 | [`--secret`](#secret)                   | `stringArray` |           | Secret to expose to the build (format: `id=mysecret[,src=/local/secret]`)                                                                        |
 | [`--shm-size`](#shm-size)               | `bytes`       | `0`       | Shared memory size for build containers                                                                                                          |
 | [`--ssh`](#ssh)                         | `stringArray` |           | SSH agent socket or keys to expose to the build (format: `default\|<id>[=<socket>\|<key>[,<key>]]`)                                              |
@@ -954,6 +955,28 @@ to a registry if you use the default image store. Alternatively, you can switch
 to using the containerd image store.
 
 For more information, see [here](https://docs.docker.com/build/metadata/attestations/sbom/).
+
+### <a name="sbom-provenance"></a> Create SPDX SBOM and in-toto provenance attestations (--sbom-provenance)
+
+Shorthand that enables the secure software supply chain preset: it attaches
+both an [SPDX SBOM](#sbom) and an [in-toto SLSA provenance](#provenance)
+attestation to every platform image produced by the build:
+
+```text
+--attest=type=sbom,generator=docker/buildkit-syft-scanner:stable-1
+--attest=type=provenance,mode=max
+```
+
+The SBOM generator runs [syft](https://github.com/anchore/syft) and emits an
+SPDX document (`https://spdx.dev/Document` predicate), while the provenance
+attestation uses the in-toto SLSA predicate. Both attestations are attached
+per platform, so each platform image in a multi-platform build can be verified
+independently, for example with `cosign download attestation
+--predicate-type https://spdx.dev/Document <image>`.
+
+Explicitly configured `--attest`, `--sbom`, or `--provenance` values take
+precedence over the preset defaults, so a custom SBOM generator or a
+`mode=min` provenance attestation is never overwritten.
 
 ### <a name="secret"></a> Secret to expose to the build (--secret)
 

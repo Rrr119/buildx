@@ -62,10 +62,11 @@ type bakeOptions struct {
 	overrides []string
 	vars      []string
 
-	sbom       string
-	provenance string
-	policy     []string
-	allow      []string
+	sbom           string
+	provenance     string
+	sbomProvenance bool
+	policy         []string
+	allow          []string
 
 	builder      string
 	metadataFile string
@@ -270,6 +271,14 @@ func runBake(ctx context.Context, dockerCli command.Cli, targets []string, in ba
 	tgts, grps, err := bake.ReadTargets(ctx, files, targets, overrides, defaults, vars, &ent, parseOpt)
 	if err != nil {
 		return err
+	}
+	if in.sbomProvenance {
+		for _, t := range tgts {
+			t.Attest, err = buildflags.SecurityAttestations(t.Attest)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	if disablePolicy {
 		policy := buildflags.PolicyConfigs{{Disabled: true}}
@@ -662,6 +671,7 @@ func bakeCmd(dockerCli command.Cli, rootOpts *rootOptions) *cobra.Command {
 	flags.BoolVar(&options.exportPush, "push", false, `Shorthand for "--set=*.output=type=registry". Conditional.`)
 	flags.StringVar(&options.sbom, "sbom", "", `Shorthand for "--set=*.attest=type=sbom"`)
 	flags.StringVar(&options.provenance, "provenance", "", `Shorthand for "--set=*.attest=type=provenance"`)
+	flags.BoolVar(&options.sbomProvenance, "sbom-provenance", false, `Shorthand for "--set=*.attest=type=sbom" with SPDX output and "--set=*.attest=type=provenance,mode=max" attached to every platform image`)
 	flags.StringArrayVar(&options.policy, "policy", []string{}, `Global policy evaluation options (format: "[disabled=true|false][,strict=true|false][,log-level=level]")`)
 	flags.StringArrayVar(&options.overrides, "set", nil, `Override target value (e.g., "targetpattern.key=value")`)
 	flags.StringArrayVar(&options.vars, "var", nil, `Set a variable value (e.g., "name=value")`)

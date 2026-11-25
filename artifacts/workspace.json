@@ -1,0 +1,17 @@
+{
+  "root": "/home/dev/feedback/uid36803",
+  "B": "/home/dev/feedback/uid36803",
+  "sha": "cf6eb55d0fed5936c47c0436b3f7a46c31bc1449",
+  "wslDistro": "Ubuntu-26.04",
+  "source": {
+    "owner": "docker",
+    "repo": "buildx",
+    "sha": "cf6eb55d0fed5936c47c0436b3f7a46c31bc1449"
+  },
+  "fork": {
+    "owner": "Rrr119",
+    "repo": "buildx",
+    "cloneUrl": "https://github.com/Rrr119/buildx.git"
+  },
+  "at": "2026-11-25T05:38:37.540Z"
+}

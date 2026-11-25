@@ -95,9 +95,10 @@ type buildOptions struct {
 	// StringArray for --resource resets its backing slice on first use.
 	legacyResources []string
 
-	attests    []string
-	sbom       string
-	provenance string
+	attests        []string
+	sbom           string
+	provenance     string
+	sbomProvenance bool
 
 	progress string
 	quiet    bool
@@ -173,6 +174,12 @@ func (o *buildOptions) toOptions() (*BuildOptions, error) {
 	opts.Attests, err = buildflags.ParseAttests(inAttests)
 	if err != nil {
 		return nil, err
+	}
+	if o.sbomProvenance {
+		opts.Attests, err = buildflags.SecurityAttestations(opts.Attests)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	opts.NamedContexts, err = buildflags.ParseContextNames(o.contexts)
@@ -610,6 +617,7 @@ func buildCmd(dockerCli command.Cli, rootOpts *rootOptions, debugger debuggerOpt
 	flags.StringArrayVar(&options.attests, "attest", []string{}, `Attestation parameters (format: "type=sbom,generator=image")`)
 	flags.StringVar(&options.sbom, "sbom", "", `Shorthand for "--attest=type=sbom"`)
 	flags.StringVar(&options.provenance, "provenance", "", `Shorthand for "--attest=type=provenance"`)
+	flags.BoolVar(&options.sbomProvenance, "sbom-provenance", false, `Shorthand for "--attest=type=sbom" with SPDX output and "--attest=type=provenance,mode=max" attached to every platform image`)
 
 	flags.StringVar(&options.callFunc, "call", "build", `Set method for evaluating build ("check", "outline", "targets")`)
 	flags.VarPF(callAlias(&options.callFunc, "check"), "check", "", `Shorthand for "--call=check"`)
